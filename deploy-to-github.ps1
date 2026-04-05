@@ -1,46 +1,39 @@
-# Скрипт деплоя в GitHub для Picassek Studio
+# Script to deploy to GitHub
+Write-Host "Starting GitHub preparation..." -ForegroundColor Cyan
 
-Write-Host "🚀 Начинаем подготовку к загрузке в GitHub..." -ForegroundColor Cyan
-
-# Проверка наличия Git
 if (!(Get-Command git -ErrorAction SilentlyContinue)) {
-    Write-Host "❌ Ошибка: Git не установлен. Пожалуйста, установите Git с git-scm.com" -ForegroundColor Red
+    Write-Host "Error: Git is not installed." -ForegroundColor Red
     exit
 }
 
-# Инициализация репозитория, если его нет
 if (!(Test-Path .git)) {
     git init
-    Write-Host "✅ Локальный репозиторий инициализирован." -ForegroundColor Green
+    Write-Host "Local repository initialized." -ForegroundColor Green
 }
 
-# Добавление всех файлов
 git add .
-Write-Host "📦 Файлы добавлены в индекс." -ForegroundColor Green
+Write-Host "Files added to index." -ForegroundColor Green
 
-# Первый коммит
-git commit -m "Initial commit: Picassek Studio Ready for Launch"
-Write-Host "💾 Коммит создан." -ForegroundColor Green
+git commit -m "Initial commit with PostgreSQL and Timeweb ready settings"
+Write-Host "Commit created." -ForegroundColor Green
 
-# Запрос ссылки на GitHub
-$githubUrl = Read-Host "🔗 Пожалуйста, вставьте ссылку на ваш ПУСТОЙ репозиторий GitHub (например, https://github.com/user/repo.git)"
+$githubUrl = Read-Host "Please paste your GitHub repository URL (e.g., https://github.com/user/repo.git)"
 
 if ([string]::IsNullOrWhiteSpace($githubUrl)) {
-    Write-Host "❌ Ошибка: Ссылка не может быть пустой." -ForegroundColor Red
+    Write-Host "Error: URL cannot be empty." -ForegroundColor Red
     exit
 }
 
-# Настройка удаленного репозитория
 git remote remove origin 2>$null
 git remote add origin $githubUrl
 git branch -M main
 
-Write-Host "📤 Загружаем код в GitHub..." -ForegroundColor Yellow
+Write-Host "Pushing to GitHub..." -ForegroundColor Yellow
 git push -u origin main
 
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "`n✨ УСПЕХ! Проект загружен в GitHub." -ForegroundColor Green
-    Write-Host "Теперь вы можете подключить его в Timeweb Cloud App Platform." -ForegroundColor Cyan
+    Write-Host "Success! Project uploaded to GitHub." -ForegroundColor Green
+    Write-Host "Now you can connect it to Timeweb Cloud App Platform." -ForegroundColor Cyan
 } else {
-    Write-Host "`n❌ Произошла ошибка при загрузке. Проверьте настройки доступа к вашему GitHub." -ForegroundColor Red
+    Write-Host "Error during upload. Check your GitHub access." -ForegroundColor Red
 }
