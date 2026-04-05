@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  password      String?   // Hashed password
+  emailVerified DateTime?
+  image         String?
+  balance       Float     @default(0)   // Баланс в рублях
+  referralCode  String    @unique @default(cuid())
+  invitedBy     String?
+  referralsCount Int      @default(0)
+  role          String   @default("USER") // ADMIN или USER
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  posts         Post[]
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   @default("CAROUSEL") // IMAGE или CAROUSEL
+  topic     String
+  content   String?  // JSON с URL изображений или промптами
+  caption   String?  // Текст поста
+  referenceUrl  String?
+  referenceDesc String?
+  status    String   @default("COMPLETED")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
