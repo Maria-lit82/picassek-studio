@@ -36,7 +36,7 @@ function CreatePostForm() {
     setError("");
 
     try {
-      const res = await fetch("/api/carousel/generate", {
+      const res = await fetch("/picassek/api/carousel/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ type, topic, slideCount, tone, referenceUrl, referenceDesc }),
