@@ -113,11 +113,16 @@ export default async function PostViewPage(props: { params: Promise<{ id: string
                           <Sparkles className="h-6 w-6 text-primary opacity-20" />
                         </div>
 
-                        <div className="flex-1 space-y-8">
-                          <h3 className="text-3xl font-black tracking-tighter leading-[1.1]">
+                        <div className="flex-1 space-y-6 relative z-10">
+                          {slide.imageUrl && (
+                            <div className="w-full aspect-square rounded-2xl overflow-hidden mb-6 border border-white/10 shadow-xl">
+                               <img src={slide.imageUrl} alt={slide.title} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <h3 className="text-2xl font-black tracking-tighter leading-[1.1] text-white">
                             {slide.title}
                           </h3>
-                          <p className="text-white/60 text-lg leading-relaxed font-medium">
+                          <p className="text-white/60 text-sm leading-relaxed font-medium line-clamp-4">
                             {slide.content}
                           </p>
                         </div>

@@ -111,7 +111,7 @@ export async function POST(req: Request) {
     let captionToSave;
 
     if (type === "CAROUSEL") {
-      // 1. Generate text for Carousel using GPT
+      // 1. Generate text for Carousel using DeepSeek
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -132,7 +132,42 @@ export async function POST(req: Request) {
       if (!response.ok) throw new Error("Text generation failed");
       const aiData = await response.json();
       const contentJson = JSON.parse(aiData.choices[0].message.content);
-      contentToSave = JSON.stringify(contentJson.slides);
+      
+      // 2. Automatically generate images for each slide
+      const slidesWithImages = [];
+      for (const slide of contentJson.slides) {
+        try {
+          const imageRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+              "HTTP-Referer": `${process.env.NEXTAUTH_URL}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: OPENROUTER_MODEL,
+              messages: [{ role: "user", content: slide.imagePrompt }]
+            }),
+          });
+
+          if (imageRes.ok) {
+            const imageData = await imageRes.json();
+            let imageUrl = imageData.choices[0].message.content;
+            
+            // Extract URL from markdown/text
+            const match = imageUrl.match(/!\[.*?\]\((https?:\/\/[^\s]+)\)/) || imageUrl.match(/https?:\/\/[^\s]+/);
+            if (match) {
+              slide.imageUrl = match[1] || match[0];
+            }
+          }
+        } catch (err) {
+          console.error("Slide image generation failed:", err);
+          // Continue without image for this slide if it fails
+        }
+        slidesWithImages.push(slide);
+      }
+
+      contentToSave = JSON.stringify(slidesWithImages);
       captionToSave = contentJson.caption;
 
     } else {
