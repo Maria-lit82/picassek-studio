@@ -107,36 +107,88 @@ export async function POST(req: Request) {
       }`;
     }
 
-    const messages = [
-      { role: "system", content: "You are Picassek AI Studio expert. Return ONLY JSON." },
-      { role: "user", content: systemPrompt }
-    ];
+    let contentToSave;
+    let captionToSave;
 
-    // If multimodal support is needed and referenceUrl is present, we could potentially pass it as a content-array
-    // But since we're using Seedream via OpenRouter which is a chat-to-image/prompt model in this context,
-    // we pass the URL in the text prompt as instructed.
+    if (type === "CAROUSEL") {
+      // 1. Generate text for Carousel using GPT
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "HTTP-Referer": `${process.env.NEXTAUTH_URL}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are Picassek AI Studio expert. Return ONLY JSON." },
+            { role: "user", content: systemPrompt }
+          ],
+          response_format: { type: "json_object" }
+        }),
+      });
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "HTTP-Referer": `${process.env.NEXTAUTH_URL}`,
-        "X-Title": "Picassek AI Studio",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: OPENROUTER_MODEL,
-        messages: messages,
-        response_format: { type: "json_object" }
-      }),
-    });
+      if (!response.ok) throw new Error("Text generation failed");
+      const aiData = await response.json();
+      const contentJson = JSON.parse(aiData.choices[0].message.content);
+      contentToSave = JSON.stringify(contentJson.slides);
+      captionToSave = contentJson.caption;
 
-    if (!response.ok) {
-        return NextResponse.json({ message: "Ошибка нейросети. Попробуйте позже." }, { status: 500 });
+    } else {
+      // 1. Generate technical prompt for Image using GPT
+      const promptRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "HTTP-Referer": `${process.env.NEXTAUTH_URL}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "openai/gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are Picassek AI Studio expert. Return ONLY JSON." },
+            { role: "user", content: systemPrompt }
+          ],
+          response_format: { type: "json_object" }
+        }),
+      });
+
+      if (!promptRes.ok) throw new Error("Prompt generation failed");
+      const promptData = await promptRes.json();
+      const contentJson = JSON.parse(promptData.choices[0].message.content);
+      captionToSave = contentJson.caption;
+      const technicalPrompt = contentJson.picassek_prompt;
+
+      // 2. Actually Generate Image using Seedream 4.5
+      const imageRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "HTTP-Referer": `${process.env.NEXTAUTH_URL}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: OPENROUTER_MODEL, // bytedance-seed/seedream-4.5
+          messages: [{ role: "user", content: technicalPrompt }] // Image models don't support JSON format
+        }),
+      });
+
+      if (!imageRes.ok) throw new Error("Image generation failed");
+      const imageData = await imageRes.json();
+      let imageUrl = imageData.choices[0].message.content; // Seedream returns image markdown/URL here
+
+      // Extract raw URL if returned as markdown
+      const markdownImageMatch = imageUrl.match(/!\[.*?\]\((https?:\/\/[^\s]+)\)/);
+      if (markdownImageMatch) {
+         imageUrl = markdownImageMatch[1];
+      } else if (imageUrl.match(/https?:\/\/[^\s]+/)) {
+         imageUrl = imageUrl.match(/https?:\/\/[^\s]+/)[0];
+      }
+
+      // Save the generated image URL instead of just the prompt
+      contentToSave = JSON.stringify([{ url: imageUrl, prompt: technicalPrompt }]);
     }
-
-    const aiData = await response.json();
-    const contentJson = JSON.parse(aiData.choices[0].message.content);
 
     // 4. Save to Database & Deduct Balance
     const [post, updatedUser] = await prisma.$transaction([
@@ -145,8 +197,8 @@ export async function POST(req: Request) {
           userId: session.user.id,
           type: type,
           topic: topic,
-          content: JSON.stringify(type === "IMAGE" ? [contentJson.picassek_prompt] : contentJson.slides),
-          caption: contentJson.caption,
+          content: contentToSave,
+          caption: captionToSave,
           referenceUrl,
           referenceDesc,
           status: "COMPLETED",

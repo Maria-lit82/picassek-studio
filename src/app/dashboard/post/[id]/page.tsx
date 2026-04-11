@@ -128,25 +128,36 @@ export default async function PostViewPage({ params }: { params: { id: string } 
                   <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
                     <Sparkles className="h-48 w-48 text-primary" />
                   </div>
-                  <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center">
+                  <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center mb-8">
                     <div className="h-24 w-24 rounded-[2rem] bg-gradient-primary flex items-center justify-center text-white glow-primary shrink-0">
                       <Wand2 className="h-12 w-12" />
                     </div>
                     <div className="flex-1 space-y-4">
-                      <h3 className="text-3xl font-black tracking-tighter">Ваш идеальный промпт готов</h3>
+                      <h3 className="text-3xl font-black tracking-tighter">Ваш идеальный Арт готов</h3>
                       <p className="text-white/60 text-lg font-medium leading-relaxed">
-                        Мы проанализировали ваш запрос и создали детальный английский промпт для получения максимально качественного изображения.
+                        Сгенерированное изображение и детальный промпт для него.
                       </p>
                     </div>
                   </div>
                   
+                  {typeof content[0] === 'object' && content[0].url ? (
+                    <div className="w-full relative rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl z-10 bg-black/40 mb-8">
+                      {/* Using standard img to bypass next/image remote domain restrictions */}
+                      <img 
+                        src={content[0].url} 
+                        alt="Generated Art" 
+                        className="w-full h-auto object-contain max-h-[600px] bg-black/50" 
+                      />
+                    </div>
+                  ) : null}
+
                   <div className="relative z-10 p-8 rounded-[2rem] bg-black/40 border border-white/10 font-mono text-sm leading-relaxed text-primary/90 italic group/prompt">
                     <div className="absolute top-6 right-6">
                        <button className="h-10 w-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
                          <Copy className="h-4 w-4" />
                        </button>
                     </div>
-                    {content[0]}
+                    {typeof content[0] === 'object' ? content[0].prompt : content[0]}
                   </div>
                 </div>
               )}
