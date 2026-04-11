@@ -19,26 +19,39 @@ import {
   ArrowRight
 } from "lucide-react";
 
-export default async function PostViewPage({ params }: { params: { id: string } }) {
+export default async function PostViewPage(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
   const session = await getServerSession(authOptions);
-
+  
   if (!session) {
     redirect("/auth/login");
   }
 
-  const post = await prisma.post.findUnique({
-    where: { 
-      id: params.id,
-      userId: session.user.id
-    },
-  });
+  let post;
+  try {
+    post = await prisma.post.findUnique({
+      where: { 
+        id: id,
+        userId: session.user.id
+      },
+    });
+  } catch (err) {
+    console.error("DB Error:", err);
+  }
 
   if (!post) {
     notFound();
   }
 
-  const isCarousel = (post as any).type === "CAROUSEL";
-  const content = JSON.parse(post.content || "[]");
+  let content = [];
+  try {
+    content = JSON.parse(post.content || "[]");
+  } catch (err) {
+    console.error("JSON Parse Error:", err);
+    content = [];
+  }
+
+  const isCarousel = post.type === "CAROUSEL";
 
   return (
     <div className="min-h-screen flex flex-col pb-20">
