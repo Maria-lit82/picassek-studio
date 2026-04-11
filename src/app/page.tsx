@@ -92,7 +92,7 @@ export default async function Home() {
                <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-secondary/20 blur-[120px] rounded-full animate-pulse-glow" />
                <div className="glass rounded-[3rem] p-4 overflow-hidden shadow-[0_0_100px_rgba(59,130,246,0.15)] ring-1 ring-white/10">
                  <Image 
-                   src="/picassek/picassek_interface_preview_1775336238677.png" 
+                   src="/picassek_interface_preview_1775336238677.png" 
                    alt="Picassek AI Studio Interface" 
                    width={1200} 
                    height={800} 
