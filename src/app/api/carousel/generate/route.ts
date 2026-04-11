@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini", // Use a cheaper model for safety check
+        model: "deepseek/deepseek-chat", // Use a cheaper model for safety check
         messages: [{ role: "user", content: safetyCheckPrompt }],
       }),
     });
@@ -120,7 +120,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-4o-mini",
+          model: "deepseek/deepseek-chat",
           messages: [
             { role: "system", content: "You are Picassek AI Studio expert. Return ONLY JSON." },
             { role: "user", content: systemPrompt }
@@ -145,7 +145,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "openai/gpt-4o-mini",
+          model: "deepseek/deepseek-chat",
           messages: [
             { role: "system", content: "You are Picassek AI Studio expert. Return ONLY JSON." },
             { role: "user", content: systemPrompt }
